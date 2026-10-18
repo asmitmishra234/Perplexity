@@ -6,6 +6,7 @@ import { initServer } from './src/sockets/server.socket.js';
 connectToDb()
 const httpServer=http.createServer(app)
 initServer(httpServer)
-httpServer.listen(3000,()=>{
-    console.log("Server is ready for run ")
+const port = Number(process.env.PORT) || 3000
+httpServer.listen(port,()=>{
+    console.log(`Server is ready on port ${port}`)
 })

@@ -2,6 +2,21 @@ import jwt from "jsonwebtoken"
 import userModel from "../model/user.model.js"
 import {sendEmail} from "../services/mail.services.js"
 
+const isProduction = process.env.NODE_ENV === "production"
+const backendUrl = (
+  process.env.BACKEND_URL ||
+  (isProduction ? "https://perplexity-1-f2d0.onrender.com" : `http://localhost:${process.env.PORT || 3000}`)
+).replace(/\/$/, "")
+const frontendUrl = (
+  process.env.FRONTEND_URL ||
+  (isProduction ? "https://perplexity-frontend-5iaa.onrender.com" : "http://localhost:5173")
+).replace(/\/$/, "")
+const authCookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
+}
+
 export async function register(req,res) {
     
     const {userName,email,password}=req.body
@@ -19,7 +34,7 @@ export async function register(req,res) {
         return res.status(201).json({
           message: "Account already exists. Use the development verification link below.",
           success: true,
-          verificationUrl: `http://localhost:3000/api/auth/verify-email?token=${verificationToken}`,
+          verificationUrl: `${backendUrl}/api/auth/verify-email?token=${verificationToken}`,
         })
       }
         return res.status(409).json({
@@ -38,6 +53,7 @@ export async function register(req,res) {
     const emailVerificationToken=jwt.sign({
         email:user.email
     },process.env.SECRET_URI)
+const verificationUrl = `${backendUrl}/api/auth/verify-email?token=${emailVerificationToken}`
 let emailSent = true
 try {
 await sendEmail({
@@ -51,7 +67,7 @@ Welcome to Perplexity!
 
 Thank you for creating your account. Please verify your email address by clicking the link below:
 
-http://localhost:3000/api/auth/verify-email?token=${emailVerificationToken}
+${verificationUrl}
 
 If you did not create this account, you can safely ignore this email.
 
@@ -136,7 +152,7 @@ The Perplexity Team
               <!-- Button -->
               <div style="text-align: center; margin: 32px 0;">
                 <a
-                  href="http://localhost:3000/api/auth/verify-email?token=${emailVerificationToken}"
+                  href="${verificationUrl}"
                   style="
                     display: inline-block;
                     padding: 14px 28px;
@@ -169,10 +185,10 @@ The Perplexity Team
                 word-break: break-all;
               ">
                 <a
-                  href="http://localhost:3000/api/auth/verify-email?token=${emailVerificationToken}"
+                  href="${verificationUrl}"
                   style="color: #2563eb;"
                 >
-                  http://localhost:3000/api/auth/verify-email?token=${emailVerificationToken}
+                  ${verificationUrl}
                 </a>
               </p>
 
@@ -245,7 +261,7 @@ return res.status(201).json({
   message: emailSent ? "Registration successful. Please verify your email." : "Registration successful. Use the development verification link below.",
   success: true,
   ...(process.env.NODE_ENV !== "production" ? {
-    verificationUrl: `http://localhost:3000/api/auth/verify-email?token=${emailVerificationToken}`,
+  verificationUrl,
   } : {}),
 });
 
@@ -322,7 +338,7 @@ const html = `
     </p>
 
     <a
-      href="http://localhost:5173/login"
+      href="${frontendUrl}/login"
       style="
         display: inline-block;
         padding: 14px 28px;
@@ -399,9 +415,7 @@ export async function login(req, res) {
 
     // ✅ cookie, not cookies
     res.cookie("token", token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      ...authCookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -439,7 +453,7 @@ export async function getme(req,res) {
     })
 }
 export async function logout(req, res) {
-    res.clearCookie("token");
+    res.clearCookie("token", authCookieOptions);
     return res.status(200).json({
         message: "Logout successful",
     });

@@ -1,9 +1,10 @@
 import {Server} from "socket.io"
+import { allowedOrigins } from "../config/cors.js";
 let io;
 export function initServer(httpServer){
     io=new Server(httpServer,{
         cors:{
-            origin:"http://localhost:5173",
+            origin:allowedOrigins,
             credentials:true,
         }
         
