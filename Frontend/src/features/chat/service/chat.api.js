@@ -1,7 +1,8 @@
 import axios from "axios"
+import { API_BASE_URL } from "../../../config/api.js"
 
 const api = axios.create({
-    baseURL: "http://localhost:3000/api/chats",
+    baseURL: `${API_BASE_URL}/api/chats`,
     withCredentials: true,
 })
 
