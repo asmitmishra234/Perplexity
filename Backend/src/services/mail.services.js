@@ -1,42 +1,45 @@
+
 import "dotenv/config";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-
-  auth: {
-    type: "OAuth2",
-    user: process.env.GOOGLE_USER,
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
-  },
-});
-
-transporter.verify((error) => {
-  if (error) {
-    console.error("Email connection error:", error);
-  } else {
-    console.log("Email server is ready");
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendEmail = async ({ to, subject, text, html }) => {
-  console.log("EMAIL TO:", to);
+  try {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY is missing");
+    }
 
-  const emailOption = {
-    from: process.env.EMAIL_USER,
-    to: to,
-    subject,
-    text,
-    html,
-  };
+    const sender = "Perplexity <onboarding@resend.dev>";
 
-  const details = await transporter.sendMail(emailOption);
+    if (!to || !subject || (!text && !html)) {
+      throw new Error(
+        "Recipient, subject, and email content are required."
+      );
+    }
 
-  console.log("Email sent:", details.messageId);
+    console.log("EMAIL TO:", to);
 
-  return details;
+    const { data, error } = await resend.emails.send({
+      from: sender,
+      to,
+      subject,
+      text,
+      html,
+    });
+
+    if (error) {
+      console.error("Resend email error:", error);
+      throw new Error(error.message || "Email sending failed");
+    }
+
+    console.log("Email sent successfully:", data.id);
+
+    return data;
+  } catch (error) {
+    console.error("Email sending failed:", error.message);
+    throw error;
+  }
 };
 
-export default transporter;
+export default resend;

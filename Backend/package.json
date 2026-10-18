@@ -14,6 +14,7 @@
     "mongoose": "^9.9.4",
     "morgan": "^1.12.0",
     "nodemailer": "^9.1.1",
+    "resend": "^6.34.1",
     "socket.io": "^4.8.3"
   },
   "name": "backend",
@@ -24,7 +25,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "npx nodemon server.js",
-    "start":"node server.js"
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",

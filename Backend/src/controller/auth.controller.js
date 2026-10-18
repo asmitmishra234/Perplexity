@@ -27,6 +27,37 @@ export async function register(req,res) {
         ]
     })
     if(isUserExist){
+      if (
+        isProduction &&
+        !isUserExist.verified &&
+        isUserExist.email.toLowerCase() === email.toLowerCase()
+      ) {
+        const verificationToken = jwt.sign({
+          email: isUserExist.email,
+        }, process.env.SECRET_URI)
+        const verificationUrl = `${backendUrl}/api/auth/verify-email?token=${verificationToken}`
+
+        try {
+          await sendEmail({
+            to: isUserExist.email,
+            subject: "Verify your email address | Perplexity",
+            text: `Hi ${isUserExist.userName},\n\nPlease verify your email address:\n\n${verificationUrl}`,
+            html: `<p>Hi ${isUserExist.userName},</p><p>Please verify your email address:</p><p><a href="${verificationUrl}">Verify your email</a></p>`,
+          })
+        } catch (error) {
+          console.error("Verification email could not be sent:", error.message)
+          return res.status(500).json({
+            message: "Account exists, but verification email could not be sent.",
+            success: false,
+          })
+        }
+
+        return res.status(200).json({
+          message: "Verification email sent. Please check your inbox.",
+          success: true,
+        })
+      }
+
       if (!isUserExist.verified && process.env.NODE_ENV !== "production") {
         const verificationToken = jwt.sign({
           email: isUserExist.email,
